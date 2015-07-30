@@ -1,18 +1,24 @@
 import sbt._
 import Keys._
-import sbtrelease.ReleasePlugin._
+import sbtrelease._
+import ReleasePlugin._
+import ReleaseStateTransformations._
 import com.typesafe.sbt.SbtScalariform._
-import ohnosequences.sbt.SbtS3Resolver.S3Resolver
-import ohnosequences.sbt.SbtS3Resolver.{ s3, s3resolver }
+//import ohnosequences.sbt.SbtS3Resolver.S3Resolver
+//import ohnosequences.sbt.SbtS3Resolver.{ s3, s3resolver }
 import scalariform.formatter.preferences._
 
+
 object MesosUtilsBuild extends Build {
-  lazy val root = Project(
+  lazy val root: Project = Project(
     id = "mesos-utils",
     base = file("."),
-    settings = baseSettings ++ releaseSettings ++ publishSettings ++ formatSettings ++ Seq(
-      libraryDependencies ++= Dependencies.root
-    )
+//    settings = baseSettings ++ releaseSettings ++ publishSettings ++ formatSettings ++ Seq(
+    settings = baseSettings ++
+               customReleaseSettings ++
+               formatSettings ++ Seq(
+                 libraryDependencies ++= Dependencies.root
+               )
   )
 
   lazy val baseSettings = Defaults.defaultSettings ++ Seq (
@@ -26,13 +32,14 @@ object MesosUtilsBuild extends Build {
     )
   )
 
-  lazy val publishSettings = S3Resolver.defaults ++ Seq(
+/*  lazy val publishSettings = S3Resolver.defaults ++ Seq(
     publishMavenStyle := true,
     publishTo := Some(s3resolver.value(
       "Mesosphere Public Repo (S3)",
       s3("downloads.mesosphere.io/maven")
     ))
-  )
+  )*/
+
 
   lazy val formatSettings = scalariformSettings ++ Seq(
     ScalariformKeys.preferences := FormattingPreferences()
@@ -52,6 +59,22 @@ object MesosUtilsBuild extends Build {
       .setPreference(SpacesWithinPatternBinders, true)
       .setPreference(FormatXml, true)
     )
+
+  // These are trimmed down release settings to simply run tests
+  lazy val customReleaseSettings = releaseSettings ++ Seq(
+    ReleaseKeys.releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,
+      inquireVersions,
+      runClean,
+      runTest
+      //setReleaseVersion,
+      //commitReleaseVersion,
+      //tagRelease,
+      //publishArtifacts,
+      //setNextVersion,
+      //commitNextVersion,
+      //pushChanges
+  ))
 }
 
 object Dependencies {
@@ -59,7 +82,7 @@ object Dependencies {
 
   val root = Seq(
     // runtime
-    mesos % "compile",
+    //mesos % "compile",
 
     // test
     Test.scalatest % "test"
@@ -69,13 +92,13 @@ object Dependencies {
 object Dependency {
   object V {
     // runtime deps versions
-    val Mesos = "0.22.1"
+    // val Mesos = "0.24.0"
 
     // test deps versions
     val ScalaTest = "2.2.1"
   }
 
-  val mesos = "org.apache.mesos" % "mesos" % V.Mesos
+  // val mesos = "org.apache.mesos" % "mesos" % V.Mesos
 
   object Test {
     val scalatest = "org.scalatest" %% "scalatest" % V.ScalaTest
